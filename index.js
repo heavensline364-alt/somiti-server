@@ -208,6 +208,16 @@ app.get("/api/members", async (req, res) => {
     res.status(500).json({ error: "Server Error" });
   }
 });
+// GET All Agent
+app.get("/api/agent", async (req, res) => {
+  try {
+    const members = await Member.find({ role: "agent" }).sort({ createdAt: -1 });
+    res.json(members);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
 
 
 
