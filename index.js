@@ -1997,19 +1997,52 @@ app.post("/webhook/sms", async (req, res) => {
 const logoSchema = new mongoose.Schema({
   title: String,
   logoUrl: String,
+  regDate: String,
+  userName: String,
+  orgName: String,
+  mobileNumber: String,
+  regNumber: String,
+  date: String,
+  tinNumber: String,
+  address: String,
 });
 
-const Logo =  mongoose.model("Logo", logoSchema);
+const Logo = mongoose.model("Logo", logoSchema);
 
+// 🧾 Logo Save API
 app.post("/api/logo", async (req, res) => {
   try {
-    const { title, logoUrl } = req.body; // logoUrl আসবে Imgbb থেকে
-    const newLogo = new Logo({ title, logoUrl });
+    const {
+      title,
+      logoUrl,
+      regDate,
+      userName,
+      orgName,
+      mobileNumber,
+      regNumber,
+      date,
+      tinNumber,
+      address,
+    } = req.body;
+
+    const newLogo = new Logo({
+      title,
+      logoUrl,
+      regDate,
+      userName,
+      orgName,
+      mobileNumber,
+      regNumber,
+      date,
+      tinNumber,
+      address,
+    });
+
     await newLogo.save();
-    res.status(200).json({ message: "Logo saved successfully!" });
+    res.status(200).json({ success: true, message: "Logo & info saved successfully!" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to save logo" });
+    res.status(500).json({ success: false, error: "Failed to save data" });
   }
 });
 // get latest logo
