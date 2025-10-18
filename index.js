@@ -1993,58 +1993,31 @@ app.post("/webhook/sms", async (req, res) => {
 
 
 
-//logo upload
+// ✅ Logo Schema
 const logoSchema = new mongoose.Schema({
   title: String,
   logoUrl: String,
-  regDate: String,
-  userName: String,
-  orgName: String,
-  mobileNumber: String,
-  regNumber: String,
-  date: String,
-  tinNumber: String,
-  address: String,
+  orgName: String, // নতুন ফিল্ড
+  address: String, // নতুন ফিল্ড
+  date: String, // নতুন ফিল্ড
+  mobileNumber: String, // নতুন ফিল্ড
 });
 
 const Logo = mongoose.model("Logo", logoSchema);
 
-// 🧾 Logo Save API
+// ✅ POST API (save logo info)
 app.post("/api/logo", async (req, res) => {
   try {
-    const {
-      title,
-      logoUrl,
-      regDate,
-      userName,
-      orgName,
-      mobileNumber,
-      regNumber,
-      date,
-      tinNumber,
-      address,
-    } = req.body;
-
-    const newLogo = new Logo({
-      title,
-      logoUrl,
-      regDate,
-      userName,
-      orgName,
-      mobileNumber,
-      regNumber,
-      date,
-      tinNumber,
-      address,
-    });
-
+    const { title, logoUrl, orgName, address, date, mobileNumber } = req.body;
+    const newLogo = new Logo({ title, logoUrl, orgName, address, date, mobileNumber });
     await newLogo.save();
-    res.status(200).json({ success: true, message: "Logo & info saved successfully!" });
+    res.status(200).json({ message: "✅ Logo saved successfully!" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, error: "Failed to save data" });
+    res.status(500).json({ error: "❌ Failed to save logo" });
   }
 });
+
 // get latest logo
 app.get("/api/logo-get", async (req, res) => {
   try {
