@@ -181,24 +181,56 @@ app.get("/api/members/last", async (req, res) => {
 app.put("/api/members/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, mobileNumber, nomineeName, nomineeMobile } = req.body;
 
+    // req.body থেকে সব ফিল্ড নিয়ে নাও
+    const {
+      name,
+      mobileNumber,
+      address,
+      nidNumber,
+      fatherOrHusband,
+      guarantor,
+      nomineeName,
+      nomineeFather,
+      nomineeMobile,
+      nomineeRelation,
+      nomineeNidNumber,
+      password,
+      status,
+    } = req.body;
+
+    // Update all fields
     const updatedMember = await Member.findByIdAndUpdate(
       id,
-      { name, mobileNumber, nomineeName, nomineeMobile },
-      { new: true }
+      {
+        name,
+        mobileNumber,
+        address,
+        nidNumber,
+        fatherOrHusband,
+        guarantor,
+        nomineeName,
+        nomineeFather,
+        nomineeMobile,
+        nomineeRelation,
+        nomineeNidNumber,
+        password,
+        status,
+      },
+      { new: true } // updated document return করবে
     );
 
     if (!updatedMember) {
       return res.status(404).json({ message: "সদস্য পাওয়া যায়নি" });
     }
 
-    res.json(updatedMember);
+    res.json({ message: "সদস্য আপডেট হয়েছে", member: updatedMember });
   } catch (error) {
     console.error("Error updating member:", error);
     res.status(500).json({ message: "সার্ভার ত্রুটি!" });
   }
 });
+
 
 
 // GET All Members
