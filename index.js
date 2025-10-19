@@ -32,8 +32,10 @@ const memberSchema = new mongoose.Schema({
   fatherOrHusband: { type: String },
   guarantor: { type: String },       // member only
   nomineeName: { type: String },     // member only
+  nomineeFather: { type: String },        // ✅ নতুন
   nomineeMobile: { type: String },   // member only
   nomineeRelation: { type: String }, // member only
+  nomineeNidNumber: { type: String },     // ✅ নতুন
   password: { type: String },
   status: { type: String, default: "active" },
   createdAt: { type: Date, default: Date.now },
@@ -142,6 +144,7 @@ app.post("/api/login", async (req, res) => {
 app.post("/api/members", async (req, res) => {
   try {
     const data = req.body;
+    
 
     // agent হলে কিছু field remove বা ignore করতে পারো
     if (data.role === "agent") {
