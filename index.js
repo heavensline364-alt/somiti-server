@@ -491,6 +491,26 @@ app.get("/api/loans-with-members", async (req, res) => {
 });
 
 
+// PUT or PATCH route 
+app.patch("/api/update-loan/:loanId", async (req, res) => {
+  try {
+    const { loanId } = req.params;
+    const updateData = req.body;
+
+    const updatedLoan = await Loan.findByIdAndUpdate(
+      loanId,
+      updateData,
+      { new: true } // return updated document
+    );
+
+    res.json(updatedLoan);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+
 
 // Helper function: installment interval
 function getIntervalDays(type) {
