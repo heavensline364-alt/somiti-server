@@ -432,6 +432,25 @@ app.get("/api/loans/:id", async (req, res) => {
   }
 });
 
+// PATCH – partial update
+app.patch("/api/loans/:id", async (req, res) => {
+  try {
+    const loanId = req.params.id;
+    const updateData = req.body; // client থেকে আসা data
+
+    const updatedLoan = await Loan.findByIdAndUpdate(loanId, updateData, {
+      new: true, // update হওয়া data return করবে
+    });
+
+    if (!updatedLoan) return res.status(404).json({ message: "Loan not found" });
+
+    res.json(updatedLoan);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 
 
