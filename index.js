@@ -438,13 +438,18 @@ app.get("/api/loans/:id", async (req, res) => {
 // 🔹 সকল লোন + মেম্বারের ডাটা নিয়ে আসা
 app.get("/api/loans-with-members", async (req, res) => {
   try {
-    // Loan এর সাথে Member যোগ করলাম
+    // Loan এর সাথে Member populate করলাম
     const loans = await Loan.find().populate("member", "name mobileNumber memberId");
 
-    // এখন প্রতিটি loan এ due হিসাব করা
     const data = loans.map((loan) => {
+      // মোট কত টাকা পেমেন্ট করা হয়েছে
       const totalPaid = loan.collections.reduce((sum, c) => sum + (c.amount || 0), 0);
       const due = loan.totalLoan - totalPaid;
+
+      // সর্বশেষ collection বের করা (যদি থাকে)
+      const latestCollection = loan.collections.length
+        ? loan.collections[loan.collections.length - 1]
+        : null;
 
       return {
         loanId: loan._id,
@@ -457,6 +462,10 @@ app.get("/api/loans-with-members", async (req, res) => {
         due,
         installments: loan.installments,
         installmentType: loan.installmentType,
+
+        // ✅ নতুন ২টা ডেটা
+        collectionDate: latestCollection ? latestCollection.collectionDate : null,
+        amount: latestCollection ? latestCollection.amount : 0,
       };
     });
 
@@ -466,6 +475,7 @@ app.get("/api/loans-with-members", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 
 // Helper function: installment interval
 function getIntervalDays(type) {
