@@ -441,32 +441,46 @@ app.get("/api/loans-with-members", async (req, res) => {
     // Loan এর সাথে Member populate করলাম
     const loans = await Loan.find().populate("member", "name mobileNumber memberId");
 
-    const data = loans.map((loan) => {
-      // মোট কত টাকা পেমেন্ট করা হয়েছে
-      const totalPaid = loan.collections.reduce((sum, c) => sum + (c.amount || 0), 0);
-      const due = loan.totalLoan - totalPaid;
+    // সব লোন থেকে data তৈরি
+    const data = loans.flatMap((loan) => {
+      // যদি collections না থাকে, তাও একটি default row রাখবে
+      if (!loan.collections || loan.collections.length === 0) {
+        return [{
+          loanId: loan._id,
+          memberId: loan.memberId,
+          memberName: loan.member?.name,
+          mobileNumber: loan.member?.mobileNumber,
+          initialLoanAmount: loan.initialLoanAmount,
+          totalLoan: loan.totalLoan,
+          totalPaid: 0,
+          due: loan.totalLoan,
+          installments: loan.installments,
+          installmentType: loan.installmentType,
+          collectionDate: null,
+          amount: 0,
+        }];
+      }
 
-      // সর্বশেষ collection বের করা (যদি থাকে)
-      const latestCollection = loan.collections.length
-        ? loan.collections[loan.collections.length - 1]
-        : null;
+      // যদি collections থাকে, তাহলে প্রতিটি collection আলাদা row হবে
+      return loan.collections.map((c) => {
+        const totalPaid = loan.collections.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const due = loan.totalLoan - totalPaid;
 
-      return {
-        loanId: loan._id,
-        memberId: loan.memberId,
-        memberName: loan.member?.name,
-        mobileNumber: loan.member?.mobileNumber,
-        initialLoanAmount: loan.initialLoanAmount,
-        totalLoan: loan.totalLoan,
-        totalPaid,
-        due,
-        installments: loan.installments,
-        installmentType: loan.installmentType,
-
-        // ✅ নতুন ২টা ডেটা
-        collectionDate: latestCollection ? latestCollection.collectionDate : null,
-        amount: latestCollection ? latestCollection.amount : 0,
-      };
+        return {
+          loanId: loan._id,
+          memberId: loan.memberId,
+          memberName: loan.member?.name,
+          mobileNumber: loan.member?.mobileNumber,
+          initialLoanAmount: loan.initialLoanAmount,
+          totalLoan: loan.totalLoan,
+          totalPaid,
+          due,
+          installments: loan.installments,
+          installmentType: loan.installmentType,
+          collectionDate: c.collectionDate,
+          amount: c.amount,
+        };
+      });
     });
 
     res.json(data);
@@ -475,6 +489,7 @@ app.get("/api/loans-with-members", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 
 
 // Helper function: installment interval
