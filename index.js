@@ -2,13 +2,13 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const axios = require("axios");
-
-require("dotenv").config();
-
 const app = express();
 
-// ===== Middleware =====
 app.use(cors());
+require("dotenv").config();
+
+// ===== Middleware =====
+
 app.use(express.json());
 
 // ===== MongoDB Connection =====
@@ -47,6 +47,10 @@ const memberSchema = new mongoose.Schema({
   nidBack: { type: String },
   nomineeNidFront: { type: String },    // member only
   nomineeNidBack: { type: String },     // member only
+  agentAccessList: {
+    type: [String],  // array of string
+    default: [],     // শুরুতে ফাঁকা থাকবে
+  },
 });
 
 
@@ -2127,6 +2131,8 @@ app.get("/api/logo-get", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch logo" });
   }
 });
+
+
 
 
 /* ===================================================
