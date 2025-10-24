@@ -270,6 +270,37 @@ app.get("/api/agent", async (req, res) => {
   }
 });
 
+// UPDATE agentAccessList by memberId
+app.put("/api/agents/:memberId/access", async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const { agentAccessList } = req.body;
+
+    if (!agentAccessList) {
+      return res.status(400).json({ message: "agentAccessList is required" });
+    }
+
+    // Update agentAccessList
+    const updatedAgent = await Member.findOneAndUpdate(
+      { memberId, role: "agent" },
+      { agentAccessList },
+      { new: true } // updated document return করবে
+    );
+
+    if (!updatedAgent) {
+      return res.status(404).json({ message: "Agent not found" });
+    }
+
+    res.json({
+      message: "Access list updated successfully!",
+      updatedAgent,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 
 /* ===================================================
