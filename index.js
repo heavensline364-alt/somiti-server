@@ -247,10 +247,22 @@ app.get("/api/members", async (req, res) => {
     res.status(500).json({ error: "Server Error" });
   }
 });
-// GET All Agent
+// GET All Agents OR Search by memberId/mobileNumber
 app.get("/api/agent", async (req, res) => {
   try {
-    const members = await Member.find({ role: "agent" }).sort({ createdAt: -1 });
+    const { search } = req.query;
+
+    let query = { role: "agent" };
+
+    // যদি search পাঠানো হয়, তাহলে filter করবো
+    if (search) {
+      query.$or = [
+        { memberId: search },
+        { mobileNumber: search },
+      ];
+    }
+
+    const members = await Member.find(query).sort({ createdAt: -1 });
     res.json(members);
   } catch (err) {
     console.error(err);
