@@ -301,6 +301,22 @@ app.put("/api/agents/:memberId/access", async (req, res) => {
   }
 });
 
+// GET agent access by memberId
+app.get("/api/agent/:memberId", async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const agent = await Member.findOne({ memberId, role: "agent" });
+
+    if (!agent) {
+      return res.status(404).json({ message: "Agent not found" });
+    }
+
+    res.json({ agentAccessList: agent.agentAccessList || [] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 
 /* ===================================================
