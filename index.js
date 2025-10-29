@@ -130,6 +130,7 @@ app.post("/api/login", async (req, res) => {
         name: user.name,
         role: user.role,
         mobileNumber: user.mobileNumber,
+        agentAccessList: user.agentAccessList
       },
     });
   } catch (err) {
