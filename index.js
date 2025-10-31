@@ -321,12 +321,13 @@ app.get("/api/agent/:memberId", async (req, res) => {
 
 
 //show all data in সদস্যের লেনদেন রিপোর্ট
+// ✅ সব সদস্যের লেনদেন রিপোর্ট 
 app.post("/api/member-transaction-report", async (req, res) => {
   try {
-    const { memberId, startDate, endDate } = req.body;
+    const { startDate, endDate } = req.body;
 
-    if (!memberId || !startDate || !endDate) {
-      return res.status(400).json({ message: "সব তথ্য প্রদান করুন!" });
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: "তারিখ প্রদান করুন!" });
     }
 
     const start = new Date(startDate);
@@ -334,39 +335,62 @@ app.post("/api/member-transaction-report", async (req, res) => {
 
     // ✅ Loans (loan disbursement or installments)
     const loans = await Loan.find({
-      memberId,
       createdAt: { $gte: start, $lte: end },
-    });
+    }).populate("memberId", "name memberId mobileNumber");
 
     // ✅ DPS Collections
     const dps = await DpsCollection.find({
-      memberId,
       createdAt: { $gte: start, $lte: end },
-    });
+    }).populate("memberId", "name memberId mobileNumber");
 
-    // ✅ Income / Expense (optional)
+    // ✅ Income / Expense
     const incomeExpenses = await OtherIncomeExpense.find({
-      memberId,
       createdAt: { $gte: start, $lte: end },
-    });
+    }).populate("memberId", "name memberId mobileNumber");
 
-    // সব ফলাফল merge করে পাঠাও
+    // ✅ সব লেনদেন একত্র করা
     const transactions = [
-      ...loans.map((l) => ({ type: "Loan", amount: l.amount, date: l.createdAt })),
-      ...dps.map((d) => ({ type: "DPS", amount: d.amount, date: d.createdAt })),
+      ...loans.map((l) => ({
+        type: "Loan",
+        memberName: l.memberId?.name || "N/A",
+        memberCode: l.memberId?.memberId || "N/A",
+        mobile: l.memberId?.mobileNumber || "-",
+        amount: l.amount,
+        date: l.createdAt,
+      })),
+      ...dps.map((d) => ({
+        type: "DPS",
+        memberName: d.memberId?.name || "N/A",
+        memberCode: d.memberId?.memberId || "N/A",
+        mobile: d.memberId?.mobileNumber || "-",
+        amount: d.amount,
+        date: d.createdAt,
+      })),
       ...incomeExpenses.map((i) => ({
         type: i.type === "income" ? "Income" : "Expense",
+        memberName: i.memberId?.name || "N/A",
+        memberCode: i.memberId?.memberId || "N/A",
+        mobile: i.memberId?.mobileNumber || "-",
         amount: i.amount,
         date: i.createdAt,
       })),
     ];
 
-    res.json({ memberId, startDate, endDate, total: transactions.length, transactions });
+    // ✅ তারিখ অনুযায়ী সাজানো (newest first)
+    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    res.json({
+      startDate,
+      endDate,
+      total: transactions.length,
+      transactions,
+    });
   } catch (error) {
     console.error("Transaction report error:", error);
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 });
+
 
 /* ===================================================
    =============== Loan API ==========================
