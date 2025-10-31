@@ -320,6 +320,54 @@ app.get("/api/agent/:memberId", async (req, res) => {
 });
 
 
+//show all data in সদস্যের লেনদেন রিপোর্ট
+app.post("/api/member-transaction-report", async (req, res) => {
+  try {
+    const { memberId, startDate, endDate } = req.body;
+
+    if (!memberId || !startDate || !endDate) {
+      return res.status(400).json({ message: "সব তথ্য প্রদান করুন!" });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // ✅ Loans (loan disbursement or installments)
+    const loans = await Loan.find({
+      memberId,
+      createdAt: { $gte: start, $lte: end },
+    });
+
+    // ✅ DPS Collections
+    const dps = await DpsCollection.find({
+      memberId,
+      createdAt: { $gte: start, $lte: end },
+    });
+
+    // ✅ Income / Expense (optional)
+    const incomeExpenses = await OtherIncomeExpense.find({
+      memberId,
+      createdAt: { $gte: start, $lte: end },
+    });
+
+    // সব ফলাফল merge করে পাঠাও
+    const transactions = [
+      ...loans.map((l) => ({ type: "Loan", amount: l.amount, date: l.createdAt })),
+      ...dps.map((d) => ({ type: "DPS", amount: d.amount, date: d.createdAt })),
+      ...incomeExpenses.map((i) => ({
+        type: i.type === "income" ? "Income" : "Expense",
+        amount: i.amount,
+        date: i.createdAt,
+      })),
+    ];
+
+    res.json({ memberId, startDate, endDate, total: transactions.length, transactions });
+  } catch (error) {
+    console.error("Transaction report error:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+});
+
 /* ===================================================
    =============== Loan API ==========================
    =================================================== */
