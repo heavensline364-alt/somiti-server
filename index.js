@@ -23,33 +23,53 @@ mongoose.connect(process.env.MONGO_URI, {
    =============== Member Schema =====================
    =================================================== */
 const memberSchema = new mongoose.Schema({
-  role: { type: String, enum: ["member", "agent"], required: true }, // নতুন field
+  role: { type: String, enum: ["member", "agent"], required: true },
   memberId: { type: String, required: true, unique: true },
   name: { type: String, required: true },
+  motherName: { type: String }, // ✅ নতুন
   mobileNumber: { type: String, required: true },
   address: { type: String },
   nidNumber: { type: String },
   fatherOrHusband: { type: String },
-  guarantor: { type: String },       // member only
-  nomineeName: { type: String },     // member only
-  nomineeFather: { type: String },        // ✅ নতুন
-  nomineeMobile: { type: String },   // member only
-  nomineeRelation: { type: String }, // member only
-  nomineeNidNumber: { type: String },     // ✅ নতুন
+
+  // জামানতকারীর তথ্য
+  guarantorName: { type: String },   // ✅ নতুন
+  guarantorAddress: { type: String }, // ✅ নতুন
+  guarantorNid: { type: String },     // ✅ নতুন
+  guarantorMobile: { type: String },  // ✅ নতুন
+  guarantor: { type: String },
+
+  // নোমিনীর তথ্য
+  nomineeName: { type: String },
+  nomineeFather: { type: String },
+  nomineeMobile: { type: String },
+  nomineeRelation: { type: String },
+  nomineeNidNumber: { type: String },
+
   password: { type: String },
   status: { type: String, default: "active" },
   createdAt: { type: Date, default: Date.now },
 
-  // Images
+  // ছবি সংক্রান্ত তথ্য
   memberImage: { type: String },
-  nomineeImage: { type: String },       // member only
+  nomineeImage: { type: String },
   nidFront: { type: String },
   nidBack: { type: String },
-  nomineeNidFront: { type: String },    // member only
-  nomineeNidBack: { type: String },     // member only
+  nomineeNidFront: { type: String },
+  nomineeNidBack: { type: String },
+
+  // অ্যাক্সেস লিস্ট (agent এর জন্য)
   agentAccessList: {
-    type: [String],  // array of string
-    default: [],     // শুরুতে ফাঁকা থাকবে
+    type: [String],
+    default: [
+      "member-list",
+      "all-loans",
+      "fdr-calculator",
+      "fdr-management",
+      "dps-calculator",
+      "all-dps-schemes",
+      "dps-member-report"
+    ],
   },
 });
 
