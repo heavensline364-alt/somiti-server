@@ -320,6 +320,47 @@ app.get("/api/agent/:memberId", async (req, res) => {
 });
 
 
+// ✅ Edit Agent
+app.put("/api/agents-all/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedAgent = await Member.findOneAndUpdate(
+      { _id: id, role: "agent" }, // role filter যোগ করা
+      req.body,
+      { new: true }
+    );
+
+    if (!updatedAgent) {
+      return res.status(404).json({ message: "Agent not found" });
+    }
+
+    res.json({ message: "Agent updated successfully", updatedAgent });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Update failed", error });
+  }
+});
+
+
+// ✅ Delete Agent
+app.delete("/api/agents-all/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedAgent = await Member.findOneAndDelete({
+      _id: id,
+      role: "agent",
+    });
+
+    if (!deletedAgent) {
+      return res.status(404).json({ message: "Agent not found" });
+    }
+
+    res.json({ message: "Agent deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Delete failed", error });
+  }
+});
 
 
 
