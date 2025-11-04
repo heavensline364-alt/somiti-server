@@ -1916,14 +1916,28 @@ app.get("/api/initial-cash", async (req, res) => {
 });
 
 
-// ✅ দৈনিক কালেকশন রিপোর্ট API for দৈনিক কালেকশন রিপোর্ট page
+// ✅ দৈনিক কালেকশন রিপোর্ট API with date range filter
 app.get("/api/daily-collection", async (req, res) => {
   try {
-    const today = new Date();
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+    let { startDate, endDate } = req.query;
 
-    // DPS collection থেকে আজকের ডাটা খোঁজা
+    let startOfDay, endOfDay;
+
+    if (startDate && endDate) {
+      // user defined date range
+      startOfDay = new Date(startDate);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      endOfDay = new Date(endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+    } else {
+      // default: আজকের date
+      const today = new Date();
+      startOfDay = new Date(today.setHours(0, 0, 0, 0));
+      endOfDay = new Date(today.setHours(23, 59, 59, 999));
+    }
+
+    // DPS collection
     const dpsData = await DpsSetting.aggregate([
       { $unwind: "$collections" },
       {
@@ -1944,10 +1958,10 @@ app.get("/api/daily-collection", async (req, res) => {
       },
     ]);
 
-    // FDR collection থেকে আজকের ডাটা খোঁজা
+    // FDR collection
     const fdrData = await FdrSetting.find({
       collectionDate: { $gte: startOfDay, $lte: endOfDay },
-    }).select("memberId fdrAmount description collectionDate").lean();
+    }).select("memberId schemeId fdrAmount description collectionDate").lean();
 
     const fdrFormatted = fdrData.map((fdr) => ({
       _id: fdr._id,
@@ -1959,7 +1973,7 @@ app.get("/api/daily-collection", async (req, res) => {
       type: "FDR",
     }));
 
-    // Loan collection থেকে আজকের ডাটা খোঁজা
+    // Loan collection
     const loanData = await Loan.aggregate([
       { $unwind: "$collections" },
       {
@@ -1980,10 +1994,9 @@ app.get("/api/daily-collection", async (req, res) => {
       },
     ]);
 
-    // তিনটার ডাটা একসাথে merge করা
     const allCollections = [...dpsData, ...fdrFormatted, ...loanData];
 
-    // তারিখ অনুযায়ী sort করা
+    // তারিখ অনুযায়ী sort
     allCollections.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     res.json(allCollections);
@@ -1992,6 +2005,7 @@ app.get("/api/daily-collection", async (req, res) => {
     res.status(500).json({ error: "Server Error" });
   }
 });
+
 
 
 //দৈনিক লেনদেন রিপোর্ট page
