@@ -114,18 +114,22 @@ const Loan = mongoose.model("Loan", loanSchema);
 // 🔹 SMS পাঠানোর ফাংশন
 async function sendSms(phone, message) {
   try {
-    const url = `https://sms.mszahid.com/services/send.php?key=${process.env.SMS_API_KEY}&number=${phone}&message=${encodeURIComponent(
-      message
-    )}&option=2&type=sms&useRandomDevice=1&prioritize=0`;
+    const url = `https://sms.mszahid.com/services/send.php?key=${process.env.SMS_API_KEY}&number=${phone}&message=${encodeURIComponent(message)}&option=2&type=sms&useRandomDevice=1&prioritize=0`;
 
     const res = await axios.get(url);
-    console.log(" SMS Sent:", res.data);
-    return { success: true, response: res.data };
+    console.log("SMS API Response:", res.data);
+
+    if (res.data?.success) {
+      return { success: true, response: res.data };
+    } else {
+      return { success: false, error: res.data?.error?.message || "Unknown error" };
+    }
   } catch (err) {
     console.error("❌ SMS send error:", err.message);
     return { success: false, error: err.message };
   }
 }
+
 
 
 // Login Route (no password hashing, simple check)
