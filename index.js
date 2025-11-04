@@ -180,6 +180,11 @@ app.post("/api/members", async (req, res) => {
       data.nomineeImage = undefined;
       data.nomineeNidFront = undefined;
       data.nomineeNidBack = undefined;
+      data.guarantorName = undefined;
+      data.guarantorAddress = undefined;
+      data.guarantorNid = undefined;
+      data.guarantorMobile = undefined;
+      data.guarantor = undefined;
     }
 
     const member = new Member(data);
@@ -202,7 +207,7 @@ app.get("/api/members/last", async (req, res) => {
   }
 });
 
-//for update data
+// for update data
 app.put("/api/members/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -210,11 +215,16 @@ app.put("/api/members/:id", async (req, res) => {
     // req.body থেকে সব ফিল্ড নিয়ে নাও
     const {
       name,
+      motherName,           // ✅ নতুন
       mobileNumber,
       address,
       nidNumber,
       fatherOrHusband,
       guarantor,
+      guarantorName,        // ✅ নতুন
+      guarantorAddress,     // ✅ নতুন
+      guarantorNid,         // ✅ নতুন
+      guarantorMobile,      // ✅ নতুন
       nomineeName,
       nomineeFather,
       nomineeMobile,
@@ -229,11 +239,16 @@ app.put("/api/members/:id", async (req, res) => {
       id,
       {
         name,
+        motherName,           // ✅ নতুন
         mobileNumber,
         address,
         nidNumber,
         fatherOrHusband,
         guarantor,
+        guarantorName,        // ✅ নতুন
+        guarantorAddress,     // ✅ নতুন
+        guarantorNid,         // ✅ নতুন
+        guarantorMobile,      // ✅ নতুন
         nomineeName,
         nomineeFather,
         nomineeMobile,
@@ -255,6 +270,7 @@ app.put("/api/members/:id", async (req, res) => {
     res.status(500).json({ message: "সার্ভার ত্রুটি!" });
   }
 });
+
 
 
 
