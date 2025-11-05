@@ -866,6 +866,7 @@ app.post("/api/send-loan-sms", async (req, res) => {
   }
 
   const result = await sendSms(phone, message);
+  console.log("🔸 sendSms result:", result);
   if (result.success) {
     res.json({ success: true, message: "SMS পাঠানো হয়েছে সফলভাবে ✅", response: result.response });
   } else {
