@@ -875,23 +875,32 @@ app.get("/api/overdue-installments", async (req, res) => {
 // });
 
 
+// 🔹 SMS পাঠানোর রাউট 
 app.post("/api/send-loan-sms", async (req, res) => {
   const { phone, message } = req.body;
 
-  try {
-    const result = await sendSms(phone, message);
-    console.log("🔹 SMS result:", result);
+  if (!phone || !message) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Phone & message required" });
+  }
 
-    if (result.success) {
-      res.json({ success: true, message: "SMS পাঠানো হয়েছে সফলভাবে ✅", response: result.response });
-    } else {
-      res.status(500).json({ success: false, error: result.error || "SMS পাঠানো ব্যর্থ হয়েছে!" });
-    }
-  } catch (err) {
-    console.error("❌ Catch Error:", err.message);
-    res.status(500).json({ success: false, error: err.message });
+  const result = await sendSms(phone, message);
+
+  if (result.success) {
+    res.json({
+      success: true,
+      message: "SMS পাঠানো হয়েছে সফলভাবে ✅",
+      response: result.response,
+    });
+  } else {
+    res.status(500).json({
+      success: false,
+      error: result.error || "SMS পাঠানো ব্যর্থ হয়েছে!",
+    });
   }
 });
+
 
 
 // 1️⃣ সব member + loan load করা, শুধু যাদের loan আছে for লোন বন্ধ করুন page
