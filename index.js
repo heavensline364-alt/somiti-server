@@ -867,11 +867,16 @@ app.post("/api/send-loan-sms", async (req, res) => {
 
   const result = await sendSms(phone, message);
   console.log("🔸 sendSms result:", result);
-  if (result.success) {
-    res.json({ success: true, message: "SMS পাঠানো হয়েছে সফলভাবে ✅", response: result.response });
-  } else {
-    res.status(500).json({ success: false, error: "SMS পাঠানো ব্যর্থ হয়েছে!" });
-  }
+   // Debug info পাঠানো (শুধু টেস্টের সময়)
+  res.json({
+    success: result.success,
+    info: result,
+  });
+  // if (result.success) {
+  //   res.json({ success: true, message: "SMS পাঠানো হয়েছে সফলভাবে ✅", response: result.response });
+  // } else {
+  //   res.status(500).json({ success: false, error: "SMS পাঠানো ব্যর্থ হয়েছে!" });
+  // }
 });
 
 // 1️⃣ সব member + loan load করা, শুধু যাদের loan আছে for লোন বন্ধ করুন page
