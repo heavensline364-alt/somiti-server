@@ -2294,20 +2294,30 @@ app.post("/api/member-transaction-report", async (req, res) => {
     // =========================
     // 🔹 সব সদস্যদের ডেটা একবারে নিয়ে আসা
     // =========================
-    const allMembers = await Member.find({}, "memberId name mobileNumber");
+    const allMembers = await Member.find({}, "memberId name mobileNumber _id");
+
+    // map বানানো — both _id এবং memberId দিয়ে
     const memberMap = {};
     allMembers.forEach((m) => {
+      memberMap[String(m._id)] = {
+        name: m.name,
+        mobileNumber: m.mobileNumber,
+        code: m.memberId,
+      };
       memberMap[m.memberId] = {
         name: m.name,
         mobileNumber: m.mobileNumber,
+        code: m.memberId,
       };
     });
+
+    // helper function for safety
+    const getMemberInfo = (id) => memberMap[String(id)] || memberMap[id] || {};
 
     // =========================
     // ✅ Loan Transactions
     // =========================
     const loans = await Loan.find({});
-
     const loanTransactions = loans.flatMap((loan) =>
       (loan.collections || [])
         .filter((c) => {
@@ -2315,11 +2325,11 @@ app.post("/api/member-transaction-report", async (req, res) => {
           return colDate >= start && colDate <= end;
         })
         .map((c) => {
-          const memberInfo = memberMap[loan.memberId] || {};
+          const memberInfo = getMemberInfo(loan.member || loan.memberId);
           return {
             type: "Loan",
             memberName: memberInfo.name || "N/A",
-            memberCode: loan.memberId || "N/A",
+            memberCode: memberInfo.code || loan.memberId || "N/A",
             mobile: memberInfo.mobileNumber || "-",
             amount: c.amount,
             date: c.collectionDate || c.createdAt,
@@ -2331,7 +2341,6 @@ app.post("/api/member-transaction-report", async (req, res) => {
     // ✅ DPS Transactions
     // =========================
     const dpsSettings = await DpsSetting.find({});
-
     const dpsTransactions = dpsSettings.flatMap((dps) =>
       (dps.collections || [])
         .filter((c) => {
@@ -2339,11 +2348,11 @@ app.post("/api/member-transaction-report", async (req, res) => {
           return colDate >= start && colDate <= end;
         })
         .map((c) => {
-          const memberInfo = memberMap[dps.memberId] || {};
+          const memberInfo = getMemberInfo(dps.memberId);
           return {
             type: "DPS",
             memberName: memberInfo.name || "N/A",
-            memberCode: dps.memberId || "N/A",
+            memberCode: memberInfo.code || dps.memberId || "N/A",
             mobile: memberInfo.mobileNumber || "-",
             amount: c.collectedAmount,
             date: c.date,
@@ -2355,18 +2364,17 @@ app.post("/api/member-transaction-report", async (req, res) => {
     // ✅ FDR Transactions
     // =========================
     const fdrSettings = await FdrSetting.find({});
-
     const fdrTransactions = fdrSettings
       .filter((fdr) => {
         const colDate = new Date(fdr.collectionDate || fdr.createdAt);
         return colDate >= start && colDate <= end;
       })
       .map((fdr) => {
-        const memberInfo = memberMap[fdr.memberId] || {};
+        const memberInfo = getMemberInfo(fdr.memberId);
         return {
           type: "FDR",
           memberName: memberInfo.name || "N/A",
-          memberCode: fdr.memberId || "N/A",
+          memberCode: memberInfo.code || fdr.memberId || "N/A",
           mobile: memberInfo.mobileNumber || "-",
           amount: fdr.fdrAmount,
           date: fdr.collectionDate || fdr.createdAt,
@@ -2374,11 +2382,9 @@ app.post("/api/member-transaction-report", async (req, res) => {
       });
 
     // =========================
-    // 🔹 Merge all transactions
+    // Merge all transactions
     // =========================
     const transactions = [...loanTransactions, ...dpsTransactions, ...fdrTransactions];
-
-    // 🔹 তারিখ অনুযায়ী সাজানো (নতুন আগে)
     transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     res.json({
@@ -2392,6 +2398,7 @@ app.post("/api/member-transaction-report", async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 });
+
 
 
 
