@@ -2291,19 +2291,34 @@ app.post("/api/member-transaction-report", async (req, res) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
+    // =========================
     // ✅ Loan Transactions
-    const loans = await Loan.find({
-      createdAt: { $gte: start, $lte: end },
-    }).populate("member", "name memberId mobileNumber");
+    // =========================
+    const loans = await Loan.find({}).populate("member", "name memberId mobileNumber");
 
-    // ✅ DPS Collections (DpsSetting এর ভিতরের collections থেকে)
-    const dpsSettings = await DpsSetting.find({
-      "collections.date": { $gte: start, $lte: end },
-    }).populate("memberId", "name memberId mobileNumber");
+    const loanTransactions = loans.flatMap((loan) =>
+      (loan.collections || [])
+        .filter((c) => {
+          const colDate = new Date(c.collectionDate || c.createdAt);
+          return colDate >= start && colDate <= end;
+        })
+        .map((c) => ({
+          type: "Loan",
+          memberName: loan.member?.name || "N/A",
+          memberCode: loan.member?.memberId || "N/A",
+          mobile: loan.member?.mobileNumber || "-",
+          amount: c.amount,
+          date: c.collectionDate || c.createdAt,
+        }))
+    );
 
-    // প্রতিটি DpsSetting এর ভিতরের collections থেকে valid date এর ডেটা বের করো
+    // =========================
+    // ✅ DPS Transactions
+    // =========================
+    const dpsSettings = await DpsSetting.find({}).populate("memberId", "name memberId mobileNumber");
+
     const dpsTransactions = dpsSettings.flatMap((dps) =>
-      dps.collections
+      (dps.collections || [])
         .filter((c) => c.date >= start && c.date <= end)
         .map((c) => ({
           type: "DPS",
@@ -2315,20 +2330,31 @@ app.post("/api/member-transaction-report", async (req, res) => {
         }))
     );
 
-    // ✅ Loan Transactions (flatten করে)
-    const loanTransactions = loans.map((loan) => ({
-      type: "Loan",
-      memberName: loan.member?.name || "N/A",
-      memberCode: loan.member?.memberId || "N/A",
-      mobile: loan.member?.mobileNumber || "-",
-      amount: loan.initialLoanAmount,
-      date: loan.createdAt,
-    }));
+    // =========================
+    // ✅ FDR Transactions
+    // =========================
+    const fdrSettings = await FdrSetting.find({}).populate("memberId", "name memberId mobileNumber");
 
-    // ✅ সব লেনদেন একত্রিত করা
-    const transactions = [...loanTransactions, ...dpsTransactions];
+    const fdrTransactions = fdrSettings
+      .filter((fdr) => {
+        const colDate = new Date(fdr.collectionDate || fdr.createdAt);
+        return colDate >= start && colDate <= end;
+      })
+      .map((fdr) => ({
+        type: "FDR",
+        memberName: fdr.memberId?.name || "N/A",
+        memberCode: fdr.memberId?.memberId || "N/A",
+        mobile: fdr.memberId?.mobileNumber || "-",
+        amount: fdr.fdrAmount,
+        date: fdr.collectionDate || fdr.createdAt,
+      }));
 
-    // ✅ তারিখ অনুযায়ী সাজানো (newest first)
+    // =========================
+    // Merge all transactions
+    // =========================
+    const transactions = [...loanTransactions, ...dpsTransactions, ...fdrTransactions];
+
+    // Sort by date descending
     transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     res.json({
@@ -2342,6 +2368,7 @@ app.post("/api/member-transaction-report", async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 });
+
 
 
 
