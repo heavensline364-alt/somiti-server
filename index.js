@@ -2291,16 +2291,11 @@ app.post("/api/member-transaction-report", async (req, res) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    // Helper: date normalize
-    const formatDate = (d) => {
-      const date = new Date(d);
-      return date.toISOString().split("T")[0]; // "YYYY-MM-DD"
-    };
-
     // =========================
-    // Loan Transactions
+    // ✅ Loan Transactions
     // =========================
     const loans = await Loan.find({}).populate("member", "name memberId mobileNumber");
+
     const loanTransactions = loans.flatMap((loan) =>
       (loan.collections || [])
         .filter((c) => {
@@ -2313,34 +2308,33 @@ app.post("/api/member-transaction-report", async (req, res) => {
           memberCode: loan.member?.memberId || "N/A",
           mobile: loan.member?.mobileNumber || "-",
           amount: c.amount,
-          date: formatDate(c.collectionDate || c.createdAt),
+          date: c.collectionDate || c.createdAt,
         }))
     );
 
     // =========================
-    // DPS Transactions
+    // ✅ DPS Transactions
     // =========================
     const dpsSettings = await DpsSetting.find({}).populate("memberId", "name memberId mobileNumber");
+
     const dpsTransactions = dpsSettings.flatMap((dps) =>
       (dps.collections || [])
-        .filter((c) => {
-          const colDate = new Date(c.date);
-          return colDate >= start && colDate <= end;
-        })
+        .filter((c) => c.date >= start && c.date <= end)
         .map((c) => ({
           type: "DPS",
           memberName: dps.memberId?.name || "N/A",
           memberCode: dps.memberId?.memberId || "N/A",
           mobile: dps.memberId?.mobileNumber || "-",
           amount: c.collectedAmount,
-          date: formatDate(c.date),
+          date: c.date,
         }))
     );
 
     // =========================
-    // FDR Transactions
+    // ✅ FDR Transactions
     // =========================
     const fdrSettings = await FdrSetting.find({}).populate("memberId", "name memberId mobileNumber");
+
     const fdrTransactions = fdrSettings
       .filter((fdr) => {
         const colDate = new Date(fdr.collectionDate || fdr.createdAt);
@@ -2352,7 +2346,7 @@ app.post("/api/member-transaction-report", async (req, res) => {
         memberCode: fdr.memberId?.memberId || "N/A",
         mobile: fdr.memberId?.mobileNumber || "-",
         amount: fdr.fdrAmount,
-        date: formatDate(fdr.collectionDate || fdr.createdAt),
+        date: fdr.collectionDate || fdr.createdAt,
       }));
 
     // =========================
@@ -2374,7 +2368,6 @@ app.post("/api/member-transaction-report", async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 });
-
 
 
 
