@@ -2292,9 +2292,21 @@ app.post("/api/member-transaction-report", async (req, res) => {
     const end = new Date(endDate);
 
     // =========================
+    // 🔹 সব সদস্যদের ডেটা একবারে নিয়ে আসা
+    // =========================
+    const allMembers = await Member.find({}, "memberId name mobileNumber");
+    const memberMap = {};
+    allMembers.forEach((m) => {
+      memberMap[m.memberId] = {
+        name: m.name,
+        mobileNumber: m.mobileNumber,
+      };
+    });
+
+    // =========================
     // ✅ Loan Transactions
     // =========================
-    const loans = await Loan.find({}).populate("member", "name memberId mobileNumber");
+    const loans = await Loan.find({});
 
     const loanTransactions = loans.flatMap((loan) =>
       (loan.collections || [])
@@ -2302,59 +2314,71 @@ app.post("/api/member-transaction-report", async (req, res) => {
           const colDate = new Date(c.collectionDate || c.createdAt);
           return colDate >= start && colDate <= end;
         })
-        .map((c) => ({
-          type: "Loan",
-          memberName: loan.member?.name || "N/A",
-          memberCode: loan.member?.memberId || "N/A",
-          mobile: loan.member?.mobileNumber || "-",
-          amount: c.amount,
-          date: c.collectionDate || c.createdAt,
-        }))
+        .map((c) => {
+          const memberInfo = memberMap[loan.memberId] || {};
+          return {
+            type: "Loan",
+            memberName: memberInfo.name || "N/A",
+            memberCode: loan.memberId || "N/A",
+            mobile: memberInfo.mobileNumber || "-",
+            amount: c.amount,
+            date: c.collectionDate || c.createdAt,
+          };
+        })
     );
 
     // =========================
     // ✅ DPS Transactions
     // =========================
-    const dpsSettings = await DpsSetting.find({}).populate("memberId", "name memberId mobileNumber");
+    const dpsSettings = await DpsSetting.find({});
 
     const dpsTransactions = dpsSettings.flatMap((dps) =>
       (dps.collections || [])
-        .filter((c) => c.date >= start && c.date <= end)
-        .map((c) => ({
-          type: "DPS",
-          memberName: dps.memberId?.name || "N/A",
-          memberCode: dps.memberId?.memberId || "N/A",
-          mobile: dps.memberId?.mobileNumber || "-",
-          amount: c.collectedAmount,
-          date: c.date,
-        }))
+        .filter((c) => {
+          const colDate = new Date(c.date);
+          return colDate >= start && colDate <= end;
+        })
+        .map((c) => {
+          const memberInfo = memberMap[dps.memberId] || {};
+          return {
+            type: "DPS",
+            memberName: memberInfo.name || "N/A",
+            memberCode: dps.memberId || "N/A",
+            mobile: memberInfo.mobileNumber || "-",
+            amount: c.collectedAmount,
+            date: c.date,
+          };
+        })
     );
 
     // =========================
     // ✅ FDR Transactions
     // =========================
-    const fdrSettings = await FdrSetting.find({}).populate("memberId", "name memberId mobileNumber");
+    const fdrSettings = await FdrSetting.find({});
 
     const fdrTransactions = fdrSettings
       .filter((fdr) => {
         const colDate = new Date(fdr.collectionDate || fdr.createdAt);
         return colDate >= start && colDate <= end;
       })
-      .map((fdr) => ({
-        type: "FDR",
-        memberName: fdr.memberId?.name || "N/A",
-        memberCode: fdr.memberId?.memberId || "N/A",
-        mobile: fdr.memberId?.mobileNumber || "-",
-        amount: fdr.fdrAmount,
-        date: fdr.collectionDate || fdr.createdAt,
-      }));
+      .map((fdr) => {
+        const memberInfo = memberMap[fdr.memberId] || {};
+        return {
+          type: "FDR",
+          memberName: memberInfo.name || "N/A",
+          memberCode: fdr.memberId || "N/A",
+          mobile: memberInfo.mobileNumber || "-",
+          amount: fdr.fdrAmount,
+          date: fdr.collectionDate || fdr.createdAt,
+        };
+      });
 
     // =========================
-    // Merge all transactions
+    // 🔹 Merge all transactions
     // =========================
     const transactions = [...loanTransactions, ...dpsTransactions, ...fdrTransactions];
 
-    // Sort by date descending
+    // 🔹 তারিখ অনুযায়ী সাজানো (নতুন আগে)
     transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     res.json({
@@ -2368,6 +2392,7 @@ app.post("/api/member-transaction-report", async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 });
+
 
 
 
