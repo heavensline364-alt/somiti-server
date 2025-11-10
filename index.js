@@ -34,6 +34,8 @@ const memberSchema = new mongoose.Schema({
 
   // জামানতকারীর তথ্য
   guarantorName: { type: String },   // ✅ নতুন
+  guarantorFather: { type: String }, // ✅ নতুন
+  guarantorMother: { type: String }, // ✅ নতুন
   guarantorAddress: { type: String }, // ✅ নতুন
   guarantorNid: { type: String },     // ✅ নতুন
   guarantorMobile: { type: String },  // ✅ নতুন
@@ -185,6 +187,8 @@ app.post("/api/members", async (req, res) => {
       data.nomineeNidFront = undefined;
       data.nomineeNidBack = undefined;
       data.guarantorName = undefined;
+      data.guarantorFather = undefined;
+      data.guarantorMother = undefined;
       data.guarantorAddress = undefined;
       data.guarantorNid = undefined;
       data.guarantorMobile = undefined;
