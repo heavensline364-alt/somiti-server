@@ -2174,10 +2174,11 @@ const totalDPSWithdrawAgg = await DpsSetting.aggregate([
 });
 
 
-// সমস্ত member balance report
+// সমস্ত member balance report (role = "member" শুধু)
 app.get("/api/members-balance-report", async (req, res) => {
   try {
-    const members = await Member.find();
+    // শুধু role = "member" filter করা
+    const members = await Member.find({ role: "member" });
 
     const report = await Promise.all(
       members.map(async (member) => {
@@ -2237,6 +2238,7 @@ app.get("/api/members-balance-report", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 //কিস্তি কালেকশন এর ওপর ভিত্তি করে লভ্যাংশ রিপোর্ট
 app.get("/api/installment-profit-report", async (req, res) => {
