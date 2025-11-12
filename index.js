@@ -64,13 +64,14 @@ const memberSchema = new mongoose.Schema({
   agentAccessList: {
     type: [String],
     default: [
-      "member-list",
+      "all-loan-installments",
       "all-loans",
       "fdr-calculator",
       "fdr-management",
       "dps-calculator",
       "all-dps-schemes",
       "dps-member-report"
+      
     ],
   },
 });
