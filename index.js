@@ -285,7 +285,7 @@ app.put("/api/members/:id", async (req, res) => {
 // GET All Members
 app.get("/api/members", async (req, res) => {
   try {
-    const members = await Member.find({ role: "member" }).sort({ createdAt: -1 });
+    const members = await Member.find({ role: "member" }).sort({ createdAt: 1 });
     res.json(members);
   } catch (err) {
     console.error(err);
