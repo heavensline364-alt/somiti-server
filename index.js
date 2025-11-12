@@ -71,7 +71,6 @@ const memberSchema = new mongoose.Schema({
       "dps-calculator",
       "all-dps-schemes",
       "dps-member-report"
-      
     ],
   },
 });
