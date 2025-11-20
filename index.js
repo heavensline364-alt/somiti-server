@@ -175,9 +175,33 @@ app.post("/api/login", async (req, res) => {
 app.post("/api/members", async (req, res) => {
   try {
     const data = req.body;
-    
 
-    // agent হলে কিছু field remove বা ignore করতে পারো
+    if (!data.role) {
+      return res.status(400).json({ error: "Role is required" });
+    }
+
+    // ⭐ Role অনুযায়ী last ID বের করা
+    const last = await Member.findOne({ role: data.role })
+      .sort({ createdAt: -1 })
+      .select("memberId");
+
+    let newIdNumber = 1;
+
+    if (last?.memberId) {
+      const previousNumber = parseInt(last.memberId.replace(/\D/g, ""), 10);
+      newIdNumber = previousNumber + 1;
+    }
+
+    // ⭐ ID Generate Based on Role
+    if (data.role === "agent") {
+      // Agent ID → A001, A002, A003 (3 digit)
+      data.memberId = `${String(newIdNumber).padStart(3, "0")}`;
+    } else {
+      // Member ID → 0001, 0002, 0003 (4 digit)
+      data.memberId = String(newIdNumber).padStart(4, "0");
+    }
+
+    // ⭐ Agent হলে কিছু field বাদ দিন
     if (data.role === "agent") {
       data.guarantor = undefined;
       data.nomineeName = undefined;
@@ -192,12 +216,13 @@ app.post("/api/members", async (req, res) => {
       data.guarantorAddress = undefined;
       data.guarantorNid = undefined;
       data.guarantorMobile = undefined;
-      data.guarantor = undefined;
     }
 
     const member = new Member(data);
     const result = await member.save();
+
     res.json({ message: "Member Created", member: result });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message || "Server Error" });
@@ -205,15 +230,26 @@ app.post("/api/members", async (req, res) => {
 });
 
 
+
 //  routes/members.js for create last member id create
 app.get("/api/members/last", async (req, res) => {
   try {
-    const lastMember = await Member.findOne().sort({ createdAt: -1 });
-    res.json({ lastMemberId: lastMember ? lastMember.memberId : "0000" });
+    const role = req.query.role; // "member" OR "agent"
+    if (!role) return res.status(400).json({ error: "role is required" });
+
+    const last = await Member.findOne({ role })
+      .sort({ createdAt: -1 })
+      .select("memberId");
+
+    res.json({
+      lastMemberId: last ? last.memberId : null,
+    });
+
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 // for update data
 app.put("/api/members/:id", async (req, res) => {
