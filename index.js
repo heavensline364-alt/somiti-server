@@ -175,9 +175,29 @@ app.post("/api/login", async (req, res) => {
 app.post("/api/members", async (req, res) => {
   try {
     const data = req.body;
-    
 
-    // agent হলে কিছু field remove বা ignore করতে পারো
+    // ⭐ আগের সবকিছুই থাকবে, শুধু এখন আমরা ID generate করব
+    const last = await Member.findOne({ role: data.role })
+      .sort({ createdAt: -1 })
+      .select("memberId");
+
+    let newIdNumber = 1;
+
+    if (last?.memberId) {
+      const previous = parseInt(last.memberId.replace(/\D/g, ""), 10);
+      newIdNumber = previous + 1;
+    }
+
+    // ⭐ Role অনুযায়ী আলাদা ID Format
+    if (data.role === "agent") {
+      // Agent → 001, 002, 003 ...
+      data.memberId = String(newIdNumber).padStart(3, "0");
+    } else {
+      // Member → 0001, 0002, 0003 ... (আগের মতো)
+      data.memberId = String(newIdNumber).padStart(4, "0");
+    }
+
+    // agent হলে কিছু field সরানো (আপনার আগের কোড 그대로)
     if (data.role === "agent") {
       data.guarantor = undefined;
       data.nomineeName = undefined;
@@ -192,12 +212,12 @@ app.post("/api/members", async (req, res) => {
       data.guarantorAddress = undefined;
       data.guarantorNid = undefined;
       data.guarantorMobile = undefined;
-      data.guarantor = undefined;
     }
 
     const member = new Member(data);
     const result = await member.save();
     res.json({ message: "Member Created", member: result });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message || "Server Error" });
@@ -205,15 +225,25 @@ app.post("/api/members", async (req, res) => {
 });
 
 
+
 //  routes/members.js for create last member id create
 app.get("/api/members/last", async (req, res) => {
   try {
-    const lastMember = await Member.findOne().sort({ createdAt: -1 });
-    res.json({ lastMemberId: lastMember ? lastMember.memberId : "0000" });
+    const role = req.query.role;
+
+    const lastMember = await Member.findOne({ role })
+      .sort({ createdAt: -1 })
+      .select("memberId");
+
+    res.json({
+      lastMemberId: lastMember ? lastMember.memberId : null
+    });
+
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 // for update data
 app.put("/api/members/:id", async (req, res) => {
