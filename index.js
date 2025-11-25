@@ -334,6 +334,7 @@ app.get("/api/agent", async (req, res) => {
       query.$or = [
         { memberId: search },
         { mobileNumber: search },
+        { name: { $regex: search, $options: "i" } }, // 🔥 Name search added
       ];
     }
 
