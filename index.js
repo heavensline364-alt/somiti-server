@@ -58,7 +58,7 @@ const memberSchema = new mongoose.Schema({
   nidFront: { type: String },
   nidBack: { type: String },
   nomineeNidFront: { type: String },
-  nomineeNidBack: { type: String },
+  
 
   // অ্যাক্সেস লিস্ট (agent এর জন্য)
   agentAccessList: {
