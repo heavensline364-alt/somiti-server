@@ -2271,24 +2271,42 @@ app.get("/api/members-balance-report", async (req, res) => {
 });
 
 
-//কিস্তি কালেকশন এর ওপর ভিত্তি করে লভ্যাংশ রিপোর্ট
+// কিস্তি কালেকশন এর ওপর ভিত্তি করে লভ্যাংশ রিপোর্ট
 app.get("/api/installment-profit-report", async (req, res) => {
   try {
     const loans = await Loan.find({});
-    const members = await Member.find({}); // সমস্ত member fetch
+    const members = await Member.find({});
 
     let report = [];
     let totalProfit = 0;
     let totalPrincipal = 0;
 
     for (let loan of loans) {
-      // member info fetch
       const member = members.find(m => m.memberId === loan.memberId);
+
+      // total interest check (percentage or money)
+      let totalInterest = 0;
+
+      if (loan.dividendType === "%") {
+        // শতাংশ হলে
+        totalInterest = loan.initialLoanAmount * (loan.dividend / 100);
+      } else if (loan.dividendType === "৳") {
+        // টাকা হলে
+        totalInterest = loan.dividend;
+      }
+
+      const perInstallmentInterest = totalInterest / loan.installments;
+      const perInstallmentPrincipal = loan.installmentAmount - perInstallmentInterest;
+
+      let collectedAmountTotal = 0;
 
       for (let collection of loan.collections) {
         const collectionDate = new Date(collection.collectionDate);
-        const interest = loan.totalLoan * (loan.dividend / 100);
-        const principalReceived = collection.amount - interest;
+
+        collectedAmountTotal += collection.amount;
+
+        let interest = perInstallmentInterest;
+        let principalReceived = collection.amount - interest;
 
         totalProfit += interest;
         totalPrincipal += principalReceived;
@@ -2297,7 +2315,11 @@ app.get("/api/installment-profit-report", async (req, res) => {
           date: collectionDate,
           type: "লোন কিস্তি",
           memberName: loan.name,
-          mobileNumber: member?.mobileNumber || "-", // mobile number যোগ
+          mobileNumber: member?.mobileNumber || "-",
+          initialLoanAmount: loan.initialLoanAmount,
+          totalLoanWithInterest: loan.totalLoan,
+          installmentAmount: loan.installmentAmount,
+          collectedTotal: collectedAmountTotal,
           amount: collection.amount,
           loanInterest: interest,
           principalReceived: principalReceived,
@@ -2308,11 +2330,13 @@ app.get("/api/installment-profit-report", async (req, res) => {
     }
 
     res.json({ report, totalProfit, totalPrincipal });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 //show all data in সদস্যের লেনদেন রিপোর্ট
 // ✅ সব সদস্যের লেনদেন রিপোর্ট 
