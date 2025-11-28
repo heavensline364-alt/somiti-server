@@ -2479,8 +2479,10 @@ const logoSchema = new mongoose.Schema({
   logoUrl: String,
   orgName: String, // নতুন ফিল্ড
   address: String, // নতুন ফিল্ড
+  userName: String,
   date: String, // নতুন ফিল্ড
   mobileNumber: String, // নতুন ফিল্ড
+  regDate: String,
 });
 
 const Logo = mongoose.model("Logo", logoSchema);
@@ -2488,8 +2490,8 @@ const Logo = mongoose.model("Logo", logoSchema);
 // ✅ POST API (save logo info)
 app.post("/api/logo", async (req, res) => {
   try {
-    const { title, logoUrl, orgName, address, date, mobileNumber } = req.body;
-    const newLogo = new Logo({ title, logoUrl, orgName, address, date, mobileNumber });
+    const { title, logoUrl, orgName, address, date, mobileNumber,userName,regDate } = req.body;
+    const newLogo = new Logo({ title, logoUrl, orgName, address, date, mobileNumber, userName, regDate });
     await newLogo.save();
     res.status(200).json({ message: "✅ Logo saved successfully!" });
   } catch (err) {
