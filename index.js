@@ -503,7 +503,15 @@ app.post("/api/loans", async (req, res) => {
 
     // ✅ SMS পাঠানো
     if (sendSMS && member.mobileNumber) {
-      const message = `প্রিয় ${member.name}, আপনি আজ ${totalLoan} টাকা লোন গ্রহণ করেছেন। ধন্যবাদ আমাদের সেবা গ্রহণের জন্য।`;
+      const message =  `প্রিয় ${member.name},\n` +
+    `আপনার লোন সফলভাবে তৈরি হয়েছে।\n\n` +
+    `📌 লোন আইডি: ${member.memberId}\n` +
+    `📌 লোনের পরিমাণ: ${loanAmountNum} টাকা\n` +
+    `📌 মোট লোন: ${totalLoan} টাকা\n` +
+    `📌 মোট কিস্তি: ${installmentsNum} টি\n` +
+    `📌 প্রতি কিস্তি: ${installmentAmount.toFixed(2)} টাকা\n` +
+    `📌 লোন দেওয়ার তারিখ: ${bdLoanDate.toLocaleDateString("bn-BD")}\n\n` +
+    `আমাদের সেবা গ্রহণের জন্য ধন্যবাদ।`;;
       const smsResult = await sendSms(member.mobileNumber, message);
       console.log("✅ SMS Response:", smsResult);
     }
@@ -564,12 +572,32 @@ const bdCollectionDate = new Date(bdDateStr + "T00:00:00");
 
     await loan.save();
 
-    // ✅ SMS পাঠানো
-    if (sendSMS && member.mobileNumber) {
-      const message = `প্রিয় ${member.name}, আপনি আজ ${collectionAmount} টাকা জমা দিয়েছেন। ধন্যবাদ আমাদের সেবা গ্রহণের জন্য।`;
-      const smsResult = await sendSms(member.mobileNumber, message);
-      console.log("✅ SMS Response:", smsResult);
-    }
+    
+    // ✅ SMS পাঠানো — বিস্তারিত তথ্যসহ
+if (sendSMS && member.mobileNumber) {
+
+  const previousDue = loan.totalLoan + Number(collectionAmount); // Payment এর আগে Due
+  const currentDue = loan.totalLoan; // Payment এর পরে Due
+
+  const nextInstallment = loan.installmentAmount
+    ? loan.installmentAmount.toFixed(2)
+    : "—";
+
+  const message =
+    `প্রিয় ${member.name},\n` +
+    `আপনার কিস্তি গ্রহণ সম্পন্ন হয়েছে।\n\n` +
+    `📌 লোন আইডি: ${loan.memberId}\n` +
+    `📌 আজ জমা: ${collectionAmount} টাকা\n` +
+    `📌 আগের বকেয়া: ${previousDue} টাকা\n` +
+    `📌 বর্তমান বাকি: ${currentDue} টাকা\n` +
+    `📌 প্রতি কিস্তির পরিমাণ: ${nextInstallment} টাকা\n` +
+    `📌 জমার তারিখ: ${bdCollectionDate.toLocaleDateString("bn-BD")}\n\n` +
+    `আমাদের সেবা গ্রহণের জন্য ধন্যবাদ।`;
+
+  const smsResult = await sendSms(member.mobileNumber, message);
+  console.log("✅ SMS Response:", smsResult);
+}
+
 
     res.json({
       message: "Collection saved and Loan updated",
