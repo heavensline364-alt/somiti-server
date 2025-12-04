@@ -1018,16 +1018,24 @@ app.get("/api/member-loans/:memberId", async (req, res) => {
 });
 
 // 3️⃣ লোন বন্ধ করা (delete)for লোন বন্ধ করুন page
-app.delete("/api/close-loan/:memberId", async (req, res) => {
+
+app.delete("/api/close-loan/:loanId", async (req, res) => {
   try {
-    const { memberId } = req.params;
-    await Loan.deleteMany({ memberId });
-    res.json({ message: "Member loans closed successfully" });
+    const { loanId } = req.params;
+
+    const deletedLoan = await Loan.findByIdAndDelete(loanId);
+
+    if (!deletedLoan) {
+      return res.status(404).json({ message: "Loan not found" });
+    }
+
+    res.json({ message: "Loan closed (deleted) successfully", deletedLoan });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 
 //DPS scheme
 const dpsSchemeSchema = new mongoose.Schema(
