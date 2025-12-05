@@ -70,7 +70,8 @@ const memberSchema = new mongoose.Schema({
       "fdr-management",
       "dps-calculator",
       "all-dps-schemes",
-      "dps-member-report"
+      "dps-member-report",
+      "member-balance-report-details"
     ],
   },
 });
